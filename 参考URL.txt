@@ -1,0 +1,34 @@
+Zip化 zip + zip名 + 対象
+zip -r cicd.zip pipeline_settings
+
+S3 Copy
+aws s3 cp cicd.zip s3://cfn-s3-20230103-inamura/cicd.zip 
+
+cfn 実行(IAMがない場合)
+【CodeCommitの設定】更新する場合は "update-stack"
+CF_STACK_NAME=cfn-codecommit-inamura
+TEMPLATE=cfn-codecommit.yml
+REPOSITORYNAME=cfn-codecommit-inamura
+TAGSNAME=inamura
+
+aws cloudformation create-stack --stack-name ${CF_STACK_NAME} --template-body file://${TEMPLATE} --parameters ParameterKey=RepositoryName,ParameterValue=${REPOSITORYNAME} ParameterKey=TagsName,ParameterValue=${TAGSNAME} | jq .
+
+
+cfn 実行(IAMがある場合)
+【CodePipelineの設定】更新する場合は "update-stack"
+CF_STACK_NAME=cfn-codepipeline-inamura
+TEMPLATE=cfn-codepipeline.yml
+PipelineName=cfn-codepipeline-inamura
+BuildName=cfn-codebuild-inamura
+PackagedTemplateFile=packaged.yml
+BuildSpec=pipeline_settings/buildspec.yml
+ArtifactStoreBucket=cfn-s3-20230103-inamura
+ModuleStackName=cfn-codepipeline-lambda-inamura
+DeployParamFile=param.json
+
+
+aws cloudformation create-stack --stack-name ${CF_STACK_NAME} --template-body file://${TEMPLATE} --parameters ParameterKey=PipelineName,ParameterValue=${PipelineName} ParameterKey=BuildName,ParameterValue=${BuildName} ParameterKey=PackagedTemplateFile,ParameterValue=${PackagedTemplateFile} ParameterKey=BuildSpec,ParameterValue=${BuildSpec} ParameterKey=ArtifactStoreBucket,ParameterValue=${ArtifactStoreBucket} ParameterKey=ModuleStackName,ParameterValue=${ModuleStackName} ParameterKey=DeployParamFile,ParameterValue=${DeployParamFile} --capabilities CAPABILITY_NAMED_IAM | jq .
+
+
+スタック削除
+aws cloudformation delete-stack --stack-name ${CF_STACK_NAME}

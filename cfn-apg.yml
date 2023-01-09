@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description:
+  APIGateway Create
+# ------------------------------------------------------------#
+#  Metadata
+# ------------------------------------------------------------#
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "APIGateway Configuration"
+        Parameters:
+        - Name
+        - FunctionName
+        - StageName
+# ------------------------------------------------------------#
+#  InputParameters
+# ------------------------------------------------------------#
+Parameters:
+  Name:
+    Type: String
+    Default: "cfn-agw-inamura"
+  FunctionName:
+    Type: String
+    Default: "cfn-lmd-inamura"
+  StageName:
+    Type: String
+    Default: "dev"
+# ------------------------------------------------------------#
+#  Resources
+# ------------------------------------------------------------#
+Resources:
+# ------------------------------------------------------------#
+#  APIGateway
+# ------------------------------------------------------------#
+  Api:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: !Ref Name
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  Resource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: !Ref FunctionName
+    DependsOn: Api
+
+  LambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      FunctionName: !Ref FunctionName
+      Action: "lambda:InvokeFunction"
+      Principal: "apigateway.amazonaws.com"
+    DependsOn: Resource 
+
+  ResourceMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref Resource
+      AuthorizationType: None
+      HttpMethod: ANY
+      Integration:
+        Type: "AWS_PROXY"
+        IntegrationHttpMethod: POST
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}/invocations"
+    DependsOn: LambdaPermission
+ 
+  Deployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref Api
+    DependsOn: ResourceMethod
+ 
+  Stage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: !Ref StageName
+      Description: dev stage
+      RestApiId: !Ref Api
+      DeploymentId: !Ref Deployment
+    DependsOn: Deployment
+
+# ------------------------------------------------------------#
+# Output Parameters
+#------------------------------------------------------------#          
+Outputs:
+  Endpoint:
+    Value: !Sub 'https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${StageName}/${FunctionName}'
+    Export:
+      Name: Endpoint
+  OriginDomain:
+    Value: !Sub '${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}'   
+    Export:
+      Name: OriginDomain
+  StageName:
+    Value: !Sub '${StageName}'
+    Export:
+      Name: StageName
