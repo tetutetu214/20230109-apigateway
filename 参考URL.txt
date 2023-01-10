@@ -8,6 +8,7 @@ zip -r cicd.zip pipeline_settings
 
 S3 Copy
 aws s3 cp cicd.zip s3://cfn-s3-20230103-inamura/cicd.zip 
+aws s3 cp example.txt s3://cfn-s3-20230102-inamura/example.txt 
 
 cfn 実行(IAMがない場合)
 【CodeCommitの設定】更新する場合は "update-stack"
