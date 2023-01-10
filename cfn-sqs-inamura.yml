@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SQS Create
+# ------------------------------------------------------------#
+#  Metadata
+# ------------------------------------------------------------#
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "SQS Configuration"
+        Parameters:
+        - QueueName
+        - TagsValue
+
+    ParameterLabels:
+      QueueName:
+        default: "QueueName"
+      TagsValue:
+        default: "TagsValue"
+
+# ------------------------------------------------------------#
+#  InputParameters
+# ------------------------------------------------------------#
+Parameters:
+  QueueName:
+    Type: String
+    Default: "cfn-sqs-inamura"
+  TagsValue:
+    Type: String
+    Default: "inamura"
+
+# ------------------------------------------------------------#
+#  SQS
+# ------------------------------------------------------------#
+Resources:
+  NotifySQS:
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: !Ref QueueName
+      Tags: 
+        - Key: "User"
+          Value: !Ref TagsValue
+
+# ------------------------------------------------------------#
+#  SQS QueuePolicy
+# ------------------------------------------------------------#    
+  SQSPolicy: 
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      Queues: 
+        - !Ref NotifySQS
+      PolicyDocument: 
+        Statement: 
+          - 
+            Action: 
+              - "SQS:*"
+            Effect: "Allow"
+            Resource: !GetAtt NotifySQS.Arn
+            Principal:  
+              AWS: 
+                - "*"  
+
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#                
+Outputs:
+  NotifySQS:
+    Value: !GetAtt NotifySQS.QueueName
+    Export:
+      Name: !Sub "${QueueName}-queuename"
+  QueueArn:
+    Value: !GetAtt NotifySQS.Arn
+    Export:
+      Name: !Sub "${QueueName}-queuearn"

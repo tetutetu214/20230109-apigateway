@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation to create S3 Bucket
+# ------------------------------------------------------------#
+#  Metadata
+# ------------------------------------------------------------#
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "S3 Configuration"
+        Parameters:
+        - S3BucketName
+        - AccessControl
+        - BlockPublicAcls
+        - BlockPublicPolicy
+        - IgnorePublicAcls
+        - RestrictPublicBuckets
+        - ExpirationInDays
+        - EventBridgeConfiguration
+        - Prefix
+        - Suffix
+        - TagsName
+
+# ------------------------------------------------------------#
+#  InputParameters
+# ------------------------------------------------------------#
+Parameters:
+  S3BucketName:
+    Type: String
+    Default: "cfn-s3-20221217-inamura"
+    Description: Type of this BacketName.
+  VersioningConfiguration:
+    Type: String
+    Default: "Enabled"
+    Description: VersioningConfiguration.
+  AccessControl:
+    Type: String
+    Description: AccessControl.
+    Default: "Private"
+    AllowedValues: [ "Private", "PublicRead", "PublicReadWrite", "AuthenticatedRead", "LogDeliveryWrite", "BucketOwnerRead", "BucketOwnerFullControl", "AwsExecRead" ]
+  BlockPublicAcls: 
+    Type: String
+    Description: BlockPublicAcls.
+    Default: "True"
+    AllowedValues: [ "True", "False" ]
+  BlockPublicPolicy:
+    Type: String
+    Description: BlockPublicPolicy.
+    Default: "True"
+    AllowedValues: [ "True", "False" ]
+  IgnorePublicAcls:
+    Type: String
+    Description: IgnorePublicAcls.
+    Default: "True"
+    AllowedValues: [ "True", "False" ]
+  RestrictPublicBuckets:
+    Type: String
+    Description: RestrictPublicBuckets.
+    Default: "True"
+    AllowedValues: [ "True", "False" ]
+  ExpirationInDays:
+    Type: String
+    Description: Lifecycle Days.
+    Default: "7"
+  Prefix:
+    Type: String
+    Description: Lambdafunction Trigger Prefix.
+    Default: "infra"
+  Suffix:
+    Type: String
+    Description: Lambdafunction Trigger Suffix
+    Default: "zip"
+  TagsName:
+    Type: String
+    Description: UserName
+    Default: "inamura"
+  
+# ------------------------------------------------------------#
+#  Resources
+# ------------------------------------------------------------#
+Resources:
+# ------------------------------------------------------------#
+#  S3
+# ------------------------------------------------------------#
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName      
+      VersioningConfiguration:
+        Status: !Ref VersioningConfiguration
+      AccessControl: !Ref AccessControl
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAcls
+        BlockPublicPolicy: !Ref BlockPublicPolicy
+        IgnorePublicAcls: !Ref IgnorePublicAcls
+        RestrictPublicBuckets: !Ref RestrictPublicBuckets
+      LifecycleConfiguration:
+        Rules:
+          - Id: LifeCycleRule
+            Status: Enabled
+            ExpirationInDays: !Ref ExpirationInDays
+      NotificationConfiguration:
+        QueueConfigurations: 
+          - Event: "s3:ObjectCreated:*"
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: !Ref Prefix
+                  - Name: suffix
+                    Value: !Ref Suffix
+            Queue: !ImportValue cfn-sqs-inamura-queuearn
+      Tags:
+        - Key: "User"
+          Value: !Ref TagsName
+# ------------------------------------------------------------#
+#  Outputs
+# ------------------------------------------------------------#
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+    Export:
+      Name: cfn-s3-BucketName

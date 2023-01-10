@@ -1,3 +1,8 @@
+CLIでDynamoDBにリソースを含ませる
+aws dynamodb batch-write-item --request-items file://mailaddress.json
+aws dynamodb put-item --table-name mailaddress --item file://mailaddress.json
+
+
 Zip化 zip + zip名 + 対象
 zip -r cicd.zip pipeline_settings
 

@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: SNS Create
+
+# ------------------------------------------------------------#
+#  Metadata
+# ------------------------------------------------------------#
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "SNS Configuration"
+        Parameters:
+        - TopicName
+        - Endpoint
+    
+    ParameterLabels:
+      TopicName:
+        default: "TopicName"
+      Endpoint:
+        default: "MailAddress"
+
+# ------------------------------------------------------------#
+#  InputParameters
+# ------------------------------------------------------------#
+Parameters:
+  TopicName:
+    Type: String
+    Default: "cfn-sns-topic-inamura"
+  Endpoint:
+    Type: String
+    Default: "XXXXXXXXXX@gmail.com"
+  TagsValueUserName:
+    Type: String
+    Default: "inamura"
+
+# ------------------------------------------------------------#
+#  Resources
+# ------------------------------------------------------------#
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref TopicName
+      Subscription:
+        - Endpoint: !Ref Endpoint
+          Protocol: email
+      Tags:
+        - Key: "User"
+          Value: !Ref TagsValueUserName    
+
+  TopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref SNSTopic
+      PolicyDocument:
+        Id: !Ref SNSTopic
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: SNS:Publish
+            Resource: !Ref SNSTopic
+
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#                
+Outputs:
+  SNSTopic:
+    Value: !GetAtt SNSTopic.Arn
+    Export:
+
+      Name: !Sub "${TopicName}-arn"
+# ------------------------------------------------------------#
+# Output Parameters
+# ------------------------------------------------------------#                
+Outputs:
+  SNSArn:
+    Value: !Ref SNSTopic
+    Export:
+      Name: !Sub "${TopicName}-arn"
+  SNSTopicName:
+    Value: !Ref TopicName
+    Export:
+      Name: !Ref TopicName
