@@ -157,7 +157,7 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - "sqs:*" 
-                Resource: "*"
+                Resource: !ImportValue cfn-sqs-inamura-queuearn
 
               - Effect: "Allow"
                 Action:
