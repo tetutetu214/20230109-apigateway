@@ -42,9 +42,8 @@ Parameters:
     Default: "10"
   TagsName:
     Type: String
+    Description: UserName
     Default: "inamura"
-
-
 # ------------------------------------------------------------#
 #  Resources
 # ------------------------------------------------------------#
@@ -57,15 +56,63 @@ Resources:
     Properties:
       Code:
         ZipFile: |
+          import boto3
+          import urllib.parse
           import json
+          from boto3.dynamodb.conditions import Key, Attr
 
-          def lambda_handler(event, context):
-              # TODO implement
-              print(event)
-              return {
-                  'statusCode': 200,
-                  'body': json.dumps('Hello Lambda!')
-              }
+          print('Loading function')
+
+          dynamodb = boto3.resource('dynamodb')
+          table = dynamodb.Table('mailaddress')
+
+          sqs = boto3.resource('sqs')
+          queue = sqs.get_queue_by_name(QueueName='cfn-sqs-inamura')
+          
+          #S3からバケット名・オブジェクトを取得
+          for rec in event['Records']:
+            bucket = rec['s3']['bucket']['name']
+            filename = rec['s3']['object']['key']
+            print(bucket)
+            print(filename)
+            
+            #DynamoDBからhaserror 0 を取得
+            response = table.query(
+              IndexName='haserror-index',
+              KeyConditionExpression=Key('haserror').eq(0)
+            )
+
+            #responseからItemを取得しissend 0 に修正
+            for item in response['Items']:
+              table.update_item(
+                Key={'email' : item['email']},
+                UpdateExpression="set issend=:val",
+                ExpressionAttributeValues= {
+                  ':val' : 0
+                }
+              )
+
+              #SQSにメッセージとして登録
+              sqsresponse = queue.send_message(
+                MessageBody=item['email'],
+                MessageAttributes={
+                  'username' : {
+                    'DataType' : 'String',
+                    'StringValue' : item['username']
+                  },
+                  'bucketname' : {
+                    'DataType' : 'String',
+                    'StringValue' : bucketname
+                  },
+                  'filename' : {
+                    'DataType' : 'String',
+                    'StringValue' : filename
+                  }
+                }
+              )
+              
+              #ログ出力
+              print(json.dumps(sqsresponse))
 
       Description: !Ref Description
       FunctionName: !Ref FunctionName
@@ -74,7 +121,12 @@ Resources:
       Runtime: !Ref Runtime
       Timeout: !Ref Timeout
       Role: !GetAtt LambdaRole.Arn
-      Tags: 
+      Environment:
+        Variables:
+          SNS: !ImportValue cfn-sns-topic-inamura-arn
+          TZ: "Asia/Tokyo"
+          
+      Tags:
         - Key: "User"
           Value: !Ref TagsName
 
@@ -101,6 +153,23 @@ Resources:
                   - "logs:CreateLogGroup"
                 Resource: !Sub "arn:${AWS::Partition}:logs:*:*:*"
 
+              - Effect: "Allow"
+                Action:
+                  - "sns:Publish" 
+                Resource: "*"
+
+              - Effect: "Allow"
+                Action:
+                  - "s3:*" 
+                Resource: "*"
+
+  TriggerLambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt Lambda.Arn
+      Principal: "s3.amazonaws.com"
+      SourceArn: !Sub "arn:${AWS::Partition}:s3:::*"
 # ------------------------------------------------------------#
 # Output Parameters
 #------------------------------------------------------------#          

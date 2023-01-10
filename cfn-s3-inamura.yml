@@ -18,7 +18,6 @@ Metadata:
         - ExpirationInDays
         - EventBridgeConfiguration
         - Prefix
-        - Suffix
         - TagsName
 
 # ------------------------------------------------------------#
@@ -27,7 +26,7 @@ Metadata:
 Parameters:
   S3BucketName:
     Type: String
-    Default: "cfn-s3-20221217-inamura"
+    Default: "cfn-s3-20230102-inamura"
     Description: Type of this BacketName.
   VersioningConfiguration:
     Type: String
@@ -62,14 +61,6 @@ Parameters:
     Type: String
     Description: Lifecycle Days.
     Default: "7"
-  Prefix:
-    Type: String
-    Description: Lambdafunction Trigger Prefix.
-    Default: "infra"
-  Suffix:
-    Type: String
-    Description: Lambdafunction Trigger Suffix
-    Default: "zip"
   TagsName:
     Type: String
     Description: UserName
@@ -100,16 +91,9 @@ Resources:
             Status: Enabled
             ExpirationInDays: !Ref ExpirationInDays
       NotificationConfiguration:
-        QueueConfigurations: 
+        LambdaConfigurations:
           - Event: "s3:ObjectCreated:*"
-            Filter:
-              S3Key:
-                Rules:
-                  - Name: prefix
-                    Value: !Ref Prefix
-                  - Name: suffix
-                    Value: !Ref Suffix
-            Queue: !ImportValue cfn-sqs-inamura-queuearn
+            Function: !ImportValue cfn-lmd-inamura-arn
       Tags:
         - Key: "User"
           Value: !Ref TagsName
