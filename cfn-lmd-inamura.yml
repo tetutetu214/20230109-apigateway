@@ -72,7 +72,7 @@ Resources:
             
             #S3からバケット名・オブジェクトを取得
             for rec in event['Records']:
-              bucketname = rec['s3']['bucket']['name']
+              bucket = rec['s3']['bucket']['name']
               filename = rec['s3']['object']['key']
               print(bucket)
               print(filename)
@@ -101,9 +101,9 @@ Resources:
                       'DataType' : 'String',
                       'StringValue' : item['username']
                     },
-                    'bucketname' : {
+                    'bucket' : {
                       'DataType' : 'String',
-                      'StringValue' : bucketname
+                      'StringValue' : bucket
                     },
                     'filename' : {
                       'DataType' : 'String',
