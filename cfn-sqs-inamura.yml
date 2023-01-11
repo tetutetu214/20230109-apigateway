@@ -25,6 +25,12 @@ Parameters:
   QueueName:
     Type: String
     Default: "cfn-sqs-inamura"
+  ReceiveMessageWaitTimeSeconds:
+    Type: String
+    Default: "20"
+  VisibilityTimeout:
+    Type: String
+    Default: "90"
   TagsValue:
     Type: String
     Default: "inamura"
@@ -37,6 +43,8 @@ Resources:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: !Ref QueueName
+      ReceiveMessageWaitTimeSeconds: !Ref ReceiveMessageWaitTimeSeconds
+      VisibilityTimeout: !Ref VisibilityTimeout
       Tags: 
         - Key: "User"
           Value: !Ref TagsValue
