@@ -72,7 +72,7 @@ Resources:
             
             #S3からバケット名・オブジェクトを取得
             for rec in event['Records']:
-              bucket = rec['s3']['bucket']['name']
+              bucketname = rec['s3']['bucket']['name']
               filename = rec['s3']['object']['key']
               print(bucket)
               print(filename)
@@ -167,7 +167,7 @@ Resources:
               - Effect: "Allow"
                 Action:
                   - "dynamodb:*" 
-                Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:table/mailaddress"
+                Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:*"
 
   TriggerLambdaPermission:
       Type: "AWS::Lambda::Permission"
