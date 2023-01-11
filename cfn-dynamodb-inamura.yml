@@ -51,3 +51,9 @@ Resources:
       Tags: 
         - Key: "username"
           Value: "inamura"
+
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+    Export:
+      Name: cfn-s3-BucketName

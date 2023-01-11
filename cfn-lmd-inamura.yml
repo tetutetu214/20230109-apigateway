@@ -164,6 +164,11 @@ Resources:
                   - "s3:*" 
                 Resource: "*"
 
+              - Effect: "Allow"
+                Action:
+                  - "dynamodb:*" 
+                Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:table/mailaddress"
+
   TriggerLambdaPermission:
       Type: "AWS::Lambda::Permission"
       Properties:
