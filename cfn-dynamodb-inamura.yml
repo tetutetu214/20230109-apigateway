@@ -30,7 +30,7 @@ Resources:
       AttributeDefinitions:
         - AttributeName: email
           AttributeType: S
-        - AttributeName: haserror
+        - AttributeName: notsend
           AttributeType: N
       KeySchema:
         - AttributeName: email
@@ -39,9 +39,9 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
       GlobalSecondaryIndexes:
-        - IndexName: haserror-index
+        - IndexName: notsend-index
           KeySchema:
-            - AttributeName: haserror
+            - AttributeName: notsend
               KeyType: HASH
           Projection:
             ProjectionType: ALL
@@ -53,7 +53,7 @@ Resources:
           Value: "inamura"
 
 Outputs:
-  S3BucketName:
-    Value: !Ref S3Bucket
+  DynamoDBArn:
+    Value: !GetAtt DynamoDB.Arn
     Export:
-      Name: cfn-s3-BucketName
+      Name: !Sub "cfn-dynamodb-${TableName}"
