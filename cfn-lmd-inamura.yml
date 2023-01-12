@@ -77,17 +77,17 @@ Resources:
               print(bucket)
               print(filename)
               
-              #DynamoDBからhaserror 0 を取得
+              #DynamoDBからnotsend 0 を取得
               response = table.query(
-                IndexName='haserror-index',
-                KeyConditionExpression=Key('haserror').eq(0)
+                IndexName='notsend-index',
+                KeyConditionExpression=Key('notsend').eq(0)
               )
 
-              #responseからItemを取得しissend 0 に修正
+              #responseからItemを取得し send 0 に修正
               for item in response['Items']:
                 table.update_item(
                   Key={'email' : item['email']},
-                  UpdateExpression="set issend=:val",
+                  UpdateExpression="set send=:val",
                   ExpressionAttributeValues= {
                     ':val' : 0
                   }
