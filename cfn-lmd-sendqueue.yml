@@ -80,7 +80,7 @@ Resources:
             for rec in event['Records']:
               bucket = BUCKET
               template = TEMPLATE
-              #S3経由で資材が送られた際の取得（Dynamo or EventBridge が Trigger にしていくためコメントアウト
+              #S3経由で資材が送られた際の取得（Dynamo or EventBridge が Trigger）
               #bucket = rec['s3']['bucket']['name']
               #template = rec['s3']['object']['key']
               print(bucket)
@@ -181,13 +181,22 @@ Resources:
                   - "dynamodb:DescribeTable" 
                 Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:*"
 
+  # TriggerLambdaPermission:
+  #     Type: "AWS::Lambda::Permission"
+  #     Properties:
+  #       Action: "lambda:InvokeFunction"
+  #       FunctionName: !GetAtt Lambda.Arn
+  #       Principal: "s3.amazonaws.com"
+  #       SourceArn: !Sub "arn:${AWS::Partition}:s3:::*"
+
   TriggerLambdaPermission:
-      Type: "AWS::Lambda::Permission"
-      Properties:
-        Action: "lambda:InvokeFunction"
-        FunctionName: !GetAtt Lambda.Arn
-        Principal: "s3.amazonaws.com"
-        SourceArn: !Sub "arn:${AWS::Partition}:s3:::*"
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref FunctionName
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !ImportValue cfn-evb-checkdynamodb-inamura-arn
+      
 # ------------------------------------------------------------#
 # Output Parameters
 #------------------------------------------------------------#          
