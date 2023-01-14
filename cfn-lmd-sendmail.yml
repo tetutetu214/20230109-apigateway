@@ -59,6 +59,7 @@ Resources:
           import boto3
           import json
           import os
+          import datetime
 
           sqs = boto3.resource('sqs')
           s3 = boto3.resource('s3')
@@ -98,9 +99,12 @@ Resources:
               
               #条件分岐 未送信(Updateする前の UPDATED_OLD が 0) の場合SNS送信 
               if r['Attributes']['send'] == 0:
+                date = datetime.datetime.now()
+                d = date.strftime('%Y%m%d %H:%M:%S')
+    
                 params = {
                 'TopicArn': snsarn,
-                'Subject': subject,
+                'Subject': subject + str(d),
                 'Message': body
                 }
                 sns.publish(**params)
@@ -120,6 +124,8 @@ Resources:
       Tags:
         - Key: "User"
           Value: !Ref TagsName
+      DeadLetterConfig:
+        TargetArn: !ImportValue cfn-dlq-inamura-queuearn
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -148,6 +154,11 @@ Resources:
                 Action:
                   - "sqs:*" 
                 Resource: !ImportValue cfn-sqs-inamura-queuearn
+
+              - Effect: "Allow"
+                Action:
+                  - "sqs:*" 
+                Resource: !ImportValue cfn-dlq-inamura-queuearn
 
               - Effect: "Allow"
                 Action:

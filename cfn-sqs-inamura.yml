@@ -11,6 +11,7 @@ Metadata:
         Parameters:
         - QueueName
         - VisibilityTimeout
+        - DeadLetterQueueName
         - TagsValue
 
     ParameterLabels:
@@ -18,6 +19,8 @@ Metadata:
         default: "QueueName"
       VisibilityTimeout:
         default: "VisibilityTimeout"
+      DeadLetterQueueName:
+        default: "TagsValue"
       TagsValue:
         default: "TagsValue"
 
@@ -31,6 +34,9 @@ Parameters:
   VisibilityTimeout:
     Type: String
     Default: "30"
+  DeadLetterQueueName:
+    Type: String
+    Default: "cfn-dlq-inamura"
   TagsValue:
     Type: String
     Default: "inamura"
@@ -43,12 +49,19 @@ Resources:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: !Ref QueueName
-      ReceiveMessageWaitTimeSeconds: !Ref ReceiveMessageWaitTimeSeconds
       VisibilityTimeout: !Ref VisibilityTimeout
       Tags: 
         - Key: "User"
           Value: !Ref TagsValue
-
+    
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref DeadLetterQueueName
+      MessageRetentionPeriod: 3600
+      Tags: 
+        - Key: "User"
+          Value: !Ref TagsValue
 # ------------------------------------------------------------#
 #  SQS QueuePolicy
 # ------------------------------------------------------------#    
@@ -67,6 +80,14 @@ Resources:
             Principal:  
               AWS: 
                 - "*"  
+          - 
+            Action: 
+              - "SQS:*"
+            Effect: "Allow"
+            Resource: !GetAtt DeadLetterQueue.Arn
+            Principal:  
+              AWS: 
+                - "*"  
 
 # ------------------------------------------------------------#
 # Output Parameters
@@ -80,3 +101,12 @@ Outputs:
     Value: !GetAtt NotifySQS.Arn
     Export:
       Name: !Sub "${QueueName}-queuearn"
+  DeadLetterQueue:
+    Value: !GetAtt DeadLetterQueue.QueueName
+    Export:
+      Name: !Sub "${DeadLetterQueueName}-queuename"
+  DeadLetterQueueArn:
+    Value: !GetAtt NotifySQS.Arn
+    Export:
+      Name: !Sub "${DeadLetterQueueName}-queuearn"
+  
