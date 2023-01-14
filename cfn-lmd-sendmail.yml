@@ -24,10 +24,10 @@ Metadata:
 Parameters:
   FunctionName:
     Type: String
-    Default: "cfn-lmd-inamura"
+    Default: "cfn-lmd-dynamodb-inamura"
   Description:
     Type: String
-    Default: "cfn-lmd-inamura"
+    Default: "cfn-lmd-dynamodb-inamura"
   Handler:
     Type: String
     Default: "index.lambda_handler"
@@ -57,64 +57,56 @@ Resources:
       Code:
         ZipFile: |
           import boto3
-          import urllib.parse
           import json
-          from boto3.dynamodb.conditions import Key, Attr
+          import os
+
+          sqs = boto3.resource('sqs')
+          s3 = boto3.resource('s3')
+          dynamodb = boto3.resource('dynamodb')
+          table = dynamodb.Table('mailaddress')
+          sns = boto3.resource('sns')
+          snsarn = os.environ['SNSARN']
 
           def lambda_handler(event, context):
-            print('Loading function')
-
-            dynamodb = boto3.resource('dynamodb')
-            table = dynamodb.Table('mailaddress')
-
-            sqs = boto3.resource('sqs')
-            queue = sqs.get_queue_by_name(QueueName='cfn-sqs-inamura')
-            
-            #S3からバケット名・オブジェクトを取得
+            #SQSからメッセージ取得
             for rec in event['Records']:
-              bucket = rec['s3']['bucket']['name']
-              filename = rec['s3']['object']['key']
-              print(bucket)
-              print(filename)
+              email = rec['body']
+              bucket = rec['messageAttributes']['bucket']['stringValue']
+              filename = rec['messageAttributes']['filename']['stringValue']
+              username = rec['messageAttributes']['username']['stringValue']
+
+              #S3 送信メール内容取得
+              obj = s3.Object(bucketname, filename)
+              r = obj.get()
+              maildata = r['Body'].read().decode('utf-8')
+              data = maildata.split("\n", 3)
+              subject =  data[0]
+              body = data[2]
+
+              #2重通知防止の仕組み
+              #DynamoDB send済みとなるので1をUpdate ただしReturnでUpdate前を返す
+              r = table.update_item(
+                Key = {
+                  'email' : email
+                  },
+                  UpdateExpression = "set send=:val",
+                  ExpressionAttributeValues = {
+                    ':val' : 1
+                  },
+                  ReturnValuse = 'UPDATED_OLD'
+                  )
               
-              #DynamoDBからnotsend 0 を取得
-              response = table.query(
-                IndexName='notsend-index',
-                KeyConditionExpression=Key('notsend').eq(0)
-              )
-
-              #responseからItemを取得し send 0 に修正
-              for item in response['Items']:
-                table.update_item(
-                  Key={'email' : item['email']},
-                  UpdateExpression="set send=:val",
-                  ExpressionAttributeValues= {
-                    ':val' : 0
-                  }
-                )
-
-                #SQSにメッセージとして登録
-                sqsresponse = queue.send_message(
-                  MessageBody=item['email'],
-                  MessageAttributes={
-                    'username' : {
-                      'DataType' : 'String',
-                      'StringValue' : item['username']
-                    },
-                    'bucket' : {
-                      'DataType' : 'String',
-                      'StringValue' : bucket
-                    },
-                    'filename' : {
-                      'DataType' : 'String',
-                      'StringValue' : filename
-                    }
-                  }
-                )
-                
-                #ログ出力
-                print(json.dumps(sqsresponse))
-
+              #条件分岐 未送信(Updateする前の UPDATED_OLD が 0) の場合SNS送信 
+              if response['Attributes']['send'] == 0:
+                params = {
+                'TopicArn': snsarn,
+                'Subject': Subject ,
+                'Message': body
+                }
+                sns_.publish(**params)
+              else:
+                print("Resend Skip")
+              
       Description: !Ref Description
       FunctionName: !Ref FunctionName
       Handler: !Ref Handler 
@@ -124,9 +116,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          SNS: !ImportValue cfn-sns-topic-inamura-arn
-          TZ: "Asia/Tokyo"
-          
+          SNSARN: !ImportValue cfn-sns-topic-inamura-arn
       Tags:
         - Key: "User"
           Value: !Ref TagsName
@@ -169,13 +159,19 @@ Resources:
                   - "dynamodb:*" 
                 Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:*"
 
-  TriggerLambdaPermission:
-      Type: "AWS::Lambda::Permission"
-      Properties:
-        Action: "lambda:InvokeFunction"
-        FunctionName: !GetAtt Lambda.Arn
-        Principal: "s3.amazonaws.com"
-        SourceArn: !Sub "arn:${AWS::Partition}:s3:::*"
+              - Effect: "Allow"
+                Action:
+                  - "sns:Publish" 
+                Resource: "*"
+
+  EventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties: 
+      Enabled: true
+      EventSourceArn: !ImportValue cfn-sqs-inamura-queuearn
+      FunctionName: !GetAtt Lambda.Arn
+      BatchSize: 10
+
 # ------------------------------------------------------------#
 # Output Parameters
 #------------------------------------------------------------#          

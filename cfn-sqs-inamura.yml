@@ -10,11 +10,14 @@ Metadata:
           default: "SQS Configuration"
         Parameters:
         - QueueName
+        - VisibilityTimeout
         - TagsValue
 
     ParameterLabels:
       QueueName:
         default: "QueueName"
+      VisibilityTimeout:
+        default: "VisibilityTimeout"
       TagsValue:
         default: "TagsValue"
 
@@ -25,12 +28,9 @@ Parameters:
   QueueName:
     Type: String
     Default: "cfn-sqs-inamura"
-  ReceiveMessageWaitTimeSeconds:
-    Type: String
-    Default: "20"
   VisibilityTimeout:
     Type: String
-    Default: "90"
+    Default: "30"
   TagsValue:
     Type: String
     Default: "inamura"
