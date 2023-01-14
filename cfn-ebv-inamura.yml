@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+  EventBridge gets s3 events and sends them to lambda
+# ------------------------------------------------------------#
+#  Metadata
+# ------------------------------------------------------------#
+Metadata:
+  "AWS::CloudFormation::Interface":
+    ParameterGroups:
+      - Label:
+          default: "Eventbridge Configuration"
+        Parameters:
+          - RuleName
+          - EventBusName
+          - State
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  EventBusName:
+    Type: String
+    Default: "default"
+  RuleName:
+    Type: String
+    Default: "cfn-evb-checkdynamodb-inamura"
+  State:
+    Type: String
+    Default: "ENABLED"
+
+# ------------------------------------------------------------#
+#  EventBridge
+# ------------------------------------------------------------#
+Resources:
+  EventsRuleCron:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Check DynamoDB and send to Lambda"
+      EventBusName: !Ref EventBusName
+      Name: !Ref RuleName
+      State: !Ref State
+      ScheduleExpression: cron(0/10 * * * ? *)
+      Targets:
+        - Arn: !ImportValue cfn-lmd-inamura-arn
+          Id: cfn-lmd-inamura
+
+# ------------------------------------------------------------#
+# Output Parameters
+#------------------------------------------------------------#          
+Outputs:
+  EventBridgeArn:
+    Value: !GetAtt EventsRuleCron.Arn
+    Export:
+      Name: !Sub "${RuleName}-arn"
