@@ -64,7 +64,7 @@ Resources:
           s3 = boto3.resource('s3')
           dynamodb = boto3.resource('dynamodb')
           table = dynamodb.Table('mailaddress')
-          sns = boto3.resource('sns')
+          sns = boto3.client('sns')
           snsarn = os.environ['SNSARN']
 
           def lambda_handler(event, context):
@@ -76,7 +76,7 @@ Resources:
               username = rec['messageAttributes']['username']['stringValue']
 
               #S3 送信メール内容取得
-              obj = s3.Object(bucketname, filename)
+              obj = s3.Object(bucket, filename)
               r = obj.get()
               maildata = r['Body'].read().decode('utf-8')
               data = maildata.split("\n", 3)
@@ -93,17 +93,17 @@ Resources:
                   ExpressionAttributeValues = {
                     ':val' : 1
                   },
-                  ReturnValuse = 'UPDATED_OLD'
+                  ReturnValues = 'UPDATED_OLD'
                   )
               
               #条件分岐 未送信(Updateする前の UPDATED_OLD が 0) の場合SNS送信 
-              if response['Attributes']['send'] == 0:
+              if r['Attributes']['send'] == 0:
                 params = {
                 'TopicArn': snsarn,
-                'Subject': Subject ,
+                'Subject': subject,
                 'Message': body
                 }
-                sns_.publish(**params)
+                sns.publish(**params)
               else:
                 print("Resend Skip")
               
