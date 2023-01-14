@@ -120,6 +120,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
+          TZ: "Asia/Tokyo"
           SNSARN: !ImportValue cfn-sns-topic-inamura-arn
       Tags:
         - Key: "User"
