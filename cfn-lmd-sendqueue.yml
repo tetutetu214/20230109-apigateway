@@ -60,6 +60,10 @@ Resources:
           import urllib.parse
           import json
           from boto3.dynamodb.conditions import Key, Attr
+          import os
+
+          BUCKET = os.environ['S3']
+          TEMPLATE = os.environ['TEMPLATE']
 
           def lambda_handler(event, context):
             print('Loading function')
@@ -74,10 +78,13 @@ Resources:
             
             #S3からバケット名 オブジェクト名取得
             for rec in event['Records']:
-              bucket = rec['s3']['bucket']['name']
-              filename = rec['s3']['object']['key']
+              bucket = BUCKET
+              template = TEMPLATE
+              #S3経由で資材が送られた際の取得（Dynamo or EventBridge が Trigger にしていくためコメントアウト
+              #bucket = rec['s3']['bucket']['name']
+              #template = rec['s3']['object']['key']
               print(bucket)
-              print(filename)
+              print(template)
               
               #DynamoDB(table) から notsend 0 を絞り込んで取得
               response = table.query(
@@ -107,9 +114,9 @@ Resources:
                       'DataType' : 'String',
                       'StringValue' : bucket
                     },
-                    'filename' : {
+                    'template' : {
                       'DataType' : 'String',
-                      'StringValue' : filename
+                      'StringValue' : template
                     }
                   }
                 )
@@ -127,8 +134,8 @@ Resources:
       Environment:
         Variables:
           SNS: !ImportValue cfn-sns-topic-inamura-arn
-          TZ: "Asia/Tokyo"
-          
+          S3: !ImportValue  cfn-s3-BucketName
+          TEMPLATE: template-mail.txt 
       Tags:
         - Key: "User"
           Value: !Ref TagsName
