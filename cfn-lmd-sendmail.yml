@@ -24,10 +24,10 @@ Metadata:
 Parameters:
   FunctionName:
     Type: String
-    Default: "cfn-lmd-dynamodb-inamura"
+    Default: "cfn-lmd-sendmail-inamura"
   Description:
     Type: String
-    Default: "cfn-lmd-dynamodb-inamura"
+    Default: "cfn-lmd-sendmail-inamura"
   Handler:
     Type: String
     Default: "index.lambda_handler"
@@ -85,7 +85,7 @@ Resources:
               body = data[2]
 
               #2重通知防止の仕組み
-              #DynamoDB send済みとなるので1をUpdate ただしReturnでUpdate前を返す
+              #DynamoDB sendするので1をUpdate ただしReturnでUpdate前を返す
               r = table.update_item(
                 Key = {
                   'email' : email
@@ -108,6 +108,17 @@ Resources:
                 'Message': body
                 }
                 sns.publish(**params)
+              
+                #DynamoDB sendしたので、notsendを1にUpdate
+                r =table.update_item(
+                  Key = {
+                    'email' : email
+                    },
+                    UpdateExpression = "set notsend=:val",
+                    ExpressionAttributeValues = {
+                      ':val' : 1
+                    }
+                  )
               else:
                 print("Resend Skip")
               

@@ -90,10 +90,6 @@ Resources:
           - Id: LifeCycleRule
             Status: Enabled
             ExpirationInDays: !Ref ExpirationInDays
-      NotificationConfiguration:
-        LambdaConfigurations:
-          - Event: "s3:ObjectCreated:*"
-            Function: !ImportValue cfn-lmd-inamura-arn
       Tags:
         - Key: "User"
           Value: !Ref TagsName
