@@ -126,8 +126,8 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          SNS: !ImportValue cfn-sns-topic-inamura-arn
-          S3: !ImportValue  cfn-s3-BucketName
+          # SNS: !ImportValue cfn-sns-topic-inamura-arn
+          # S3: !ImportValue  cfn-s3-BucketName
           TEMPLATE: template-mail.txt 
       Tags:
         - Key: "User"
@@ -174,13 +174,13 @@ Resources:
                 Resource: "arn:aws:dynamodb:ap-northeast-1:717076937412:*"
 
   #削除する際は TriggerLambdaPermission をコメントアウトして Lambda を更新する
-  TriggerLambdaPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref FunctionName
-      Action: lambda:InvokeFunction
-      Principal: events.amazonaws.com
-      SourceArn: !ImportValue cfn-evb-checkdynamodb-inamura-arn
+  # TriggerLambdaPermission:
+  #   Type: AWS::Lambda::Permission
+  #   Properties:
+  #     FunctionName: !Ref FunctionName
+  #     Action: lambda:InvokeFunction
+  #     Principal: events.amazonaws.com
+  #     SourceArn: !ImportValue cfn-evb-checkdynamodb-inamura-arn
   #ここまで
 
 # ------------------------------------------------------------#
