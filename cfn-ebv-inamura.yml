@@ -40,7 +40,7 @@ Resources:
       State: !Ref State
       ScheduleExpression: cron(0/10 * * * ? *)
       Targets:
-        - Arn: !ImportValue cfn-lmd-inamura-arn
+        - Arn: !ImportValue cfn-lmd-sendqueue-inamura-arn
           Id: cfn-lmd-inamura
 
 # ------------------------------------------------------------#
