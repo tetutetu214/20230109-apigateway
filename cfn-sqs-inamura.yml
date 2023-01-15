@@ -50,6 +50,9 @@ Resources:
     Properties: 
       QueueName: !Ref QueueName
       VisibilityTimeout: !Ref VisibilityTimeout
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 2
       Tags: 
         - Key: "User"
           Value: !Ref TagsValue
@@ -106,7 +109,7 @@ Outputs:
     Export:
       Name: !Sub "${DeadLetterQueueName}-queuename"
   DeadLetterQueueArn:
-    Value: !GetAtt NotifySQS.Arn
+    Value: !GetAtt DeadLetterQueue.Arn
     Export:
       Name: !Sub "${DeadLetterQueueName}-queuearn"
   
