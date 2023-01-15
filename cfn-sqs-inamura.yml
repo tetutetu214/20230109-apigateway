@@ -10,17 +10,14 @@ Metadata:
           default: "SQS Configuration"
         Parameters:
         - QueueName
-        - VisibilityTimeout
         - DeadLetterQueueName
         - TagsValue
 
     ParameterLabels:
       QueueName:
         default: "QueueName"
-      VisibilityTimeout:
-        default: "VisibilityTimeout"
       DeadLetterQueueName:
-        default: "TagsValue"
+        default: "DeadLetterQueueName"
       TagsValue:
         default: "TagsValue"
 
@@ -31,9 +28,6 @@ Parameters:
   QueueName:
     Type: String
     Default: "cfn-sqs-inamura"
-  VisibilityTimeout:
-    Type: String
-    Default: "30"
   DeadLetterQueueName:
     Type: String
     Default: "cfn-dlq-inamura"
@@ -49,7 +43,8 @@ Resources:
     Type: AWS::SQS::Queue
     Properties: 
       QueueName: !Ref QueueName
-      VisibilityTimeout: !Ref VisibilityTimeout
+      VisibilityTimeout: 30
+      MessageRetentionPeriod: 540
       RedrivePolicy:
         deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
         maxReceiveCount: 2
